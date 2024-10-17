@@ -1,0 +1,40 @@
+cookie:
+  expiry_days: 30
+  key: some_signature_key
+  name: some_cookie_name
+credentials:
+  usernames:
+    administrator:
+      email: shohabbosdev@gmail.com
+      failed_login_attempts: 3
+      first_name: Admincha
+      last_name: Adminov
+      logged_in: false
+      password: $2b$12$KErURko72zNjxss31x8pJ.BCxGEwsr5ksWFabOAIj.nDVfwebW6O2
+      roles:
+      - viewer
+    shohabbosdev:
+      email: ushohabbos@gmail.com
+      failed_login_attempts: 1
+      first_name: Shoh Abbos
+      last_name: Ulug'murodov
+      logged_in: true
+      password: $2b$12$.cdPSTrY4a3oEoCdh.CzE.YyyOswvnO6eagLhqJ9qAF8ZmqZAGlZu
+      roles:
+      - admin
+      - editor
+      - viewer
+oauth2:
+  google:
+    client_id: null
+    client_secret: null
+    redirect_uri: null
+  microsoft:
+    client_id: null
+    client_secret: null
+    redirect_uri: null
+    tenant_id: null
+pre-authorized:
+  emails:
+  - ushohabbos@gmail.com
+  - kuvandikovjora@gmail.com

@@ -1,1 +1,1 @@
-# jbnuu-konferensiya
+"# JBNUU-CONFERENCES" 
