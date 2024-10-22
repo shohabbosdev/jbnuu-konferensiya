@@ -1,4 +1,5 @@
 import yaml
+import json
 import streamlit as st
 import streamlit_authenticator as stauth
 from yaml.loader import SafeLoader
@@ -12,7 +13,10 @@ from streamlit_authenticator.utilities import (CredentialsError,
 from utils import make_certificates
 from streamlit_option_menu import option_menu
 
-
+# JSON faylni o'qib olish
+with open('src/azolar.json', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+    
 # Sahifa sozlamalari
 st.set_page_config(page_title="JBNUU Conferences", page_icon="🔖", layout="wide", initial_sidebar_state="expanded")
 
@@ -53,24 +57,26 @@ if selected == "Sertifikat olish":
                 authenticator.logout("Chiqish")
                 st.success(f"Assalomu alaykum {st.session_state['name']}, o'zingizning barcha ma'lumotlaringizni kiriting")
                 # Sertifikat uchun forma
-                fish = st.text_input("Familiya ism, sharifingizni kiriting", placeholder="Ulug'murodov Shoh Abbos Baxodir o'g'li", max_chars=200)
-                maqola_matni = st.text_input("Maqolangiz mavzusini kiriting", placeholder="Brayl matnida yozilgan ma'lumotlarning ishonchliligini oshirish algoritmlari", max_chars=200)
+                # fish = st.text_input("Familiya ism, sharifingizni kiriting", placeholder="Ulug'murodov Shoh Abbos Baxodir o'g'li", max_chars=200)
+                # 1. Shuba tanlash
+                shuba = st.selectbox("Shubani tanlang:", list(data.keys()))
                 
-                shuba = st.radio("O'z sho'bangizni kiriting", 
-                                options=[
-                                    "1️⃣-sho‘ba. Sun’iy intellekt va axborot xavfsizligi",
-                                    "2️⃣-sho‘ba. Raqamli iqtisodiyot va raqamli transformatsiya",
-                                    "3️⃣-sho‘ba. Ta’lim texnologiyalari va barqaror rivojlanish",
-                                    "4️⃣-sho‘ba. Biotexnologiya sohasida innovatsion tadqiqotlar",
-                                    "5️⃣-sho‘ba. Psixologiya va pedagogikada zamonaviy metodlar va texnologiyalar",
-                                    "6️⃣-sho‘ba. Global transformatsiyalar sharoitida ijtimoiy tadqiqotlar va zamonaviy filologiyaning dolzarb muammolari"
-                                ])
+                # 2. Familiya tanlash (agar shuba tanlangan bo'lsa)
+                if shuba:
+                    familiyalar = list(data[shuba].keys())  # tanlangan shubaga mos familiyalar
+                    familiya = st.selectbox("Familiyani tanlang:", familiyalar)
+
+                    # 3. Mavzuni ko'rsatish (agar familiya tanlangan bo'lsa)
+                    if familiya:
+                        mavzu = data[shuba][familiya]
+                        maqola_matni = st.text_input("Maqolangiz mavzusini kiriting", value=mavzu,placeholder="Brayl matnida yozilgan ma'lumotlarning ishonchliligini oshirish algoritmlari", disabled=True)
+                        # st.write(f"Tanlangan familiyaga mos mavzu: **{mavzu}**")
                 
                 createButton = st.button("Sertifikat yaratish", use_container_width=True, type='primary', icon='✅')
                 
                 forgot_username()
-                if createButton and fish and maqola_matni:
-                    rasm = st.image(make_certificates(fish, maqola_matni), caption=shuba)
+                if createButton and familiya and maqola_matni:
+                    rasm = st.image(make_certificates(familiya, maqola_matni), caption=shuba)
                 else:
                     st.warning("Ma'lumotlarni to'liq to'ldiring.")
                     
