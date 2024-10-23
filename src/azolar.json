@@ -2,7 +2,7 @@
     "1️⃣-sho‘ba. Sun’iy intellekt va axborot xavfsizligi": {
         "Turakulov O.X": "Ta'lim sifatni ta'minlash xalqaro nufuzga erishishning yagona yechimi",
         "Ismailov I.T": "Urbanizatsiya jarayonlarni bashoratlash modellari",
-        "Ismailov I.T": "Mashinaviy o'qitish algoritmi asosida suniy yo'ldosh tasvirlarini yer qoplamalari va yer o'zgarishi tasvirlariga keltirish",
+        "Ismailov I.T.": "Mashinaviy o'qitish algoritmi asosida suniy yo'ldosh tasvirlarini yer qoplamalari va yer o'zgarishi tasvirlariga keltirish",
         "Aliyev Sh.B": "VPN texnologiyalarining ishlash prinsipi",
         "Ataboyeva M.K": "Sun'iy intellektga asoslangan pnevmoniya kasalligini aniqlovchi model qurish",
         "Aynakulov T.T, Ulashev A.N, Norqo'ziyev Q.K, Abdurashidova L.U": "C# dasturlash tili yordamida korxonalarda samarali ERP (ishlab chiqarish) tizimini yaratish",
@@ -46,7 +46,7 @@
         "Ko'chimov A.H": "Elektron tijorat: muammolar, imkoniyatlar va tendentsiyalar",
         "Abdunazarov R, Abdurasidova I": "Shturm –liuvill operatori uchun teskari masalani yechishda klassik va izospektral masalalar o'rtasida bog'lanish o'rnatish",
         "Mаnsurоv Sh.A": "Dаvlаtning sоliq-byudjet siyоsаti",
-        "Ko'chimov A.H": "Inson resurslarini boshqarish usullarining tahliliy ko'rsatkichlari",
+        "Ko'chimov A.H.": "Inson resurslarini boshqarish usullarining tahliliy ko'rsatkichlari",
         "Usmonova V.B, Abdulhamidov A.O": "O'zbekiston respublikasi markaziy bankining mikromoliya tashkilotlarining islomiy moliyalashtirish to'g'risidagi qarori",
         "Ko'chimov H, Murotjonova M.D": "Raqamli iqtisodiyot platformasi, ekotizimi va uning xarakterli xususiyatlari",
         "Shukurova I.A": "Raqamli transformatsiyaning O'zbekiston iqtisodiyotiga ta'siri",
@@ -130,7 +130,7 @@
         "Titova O.A": "Ispolzovanie graficheskix sposobov predstavleniya informatsii v obuchenii inostrannomu yaziku",
         "Konisterova E.A": "O vozmojnosti integratsii grammatiki v kontekst pri obuchenii angliyskomu yaziku",
         "Drozdova T.V": "Reading of belles-lettres as a form of foreign language students' independent work at university (practical aspects)",
-        "Drozdova T.V": "Deyatelnostniy podxod v obuchenii inostrannomu yaziku studentov-bakalavrov yazukovix spetsialnostey (na primere metoda proektov)",
+        "Drozdova T.V.": "Deyatelnostniy podxod v obuchenii inostrannomu yaziku studentov-bakalavrov yazukovix spetsialnostey (na primere metoda proektov)",
         "Volkova E.V": "GPT Chat as an effective method in teaching english",
         "Belenov N.V": "Geoinformatsionnie sistemi kak instrument toponimicheskogo issledovaniya: pedagogicheskiy aspekt",
         "Aleshina O.I, Tolstoy L": "Modern pedagogical technologies in teaching a foreign language in a higher educational institution",
@@ -198,8 +198,8 @@
         "M.B.Sattorova": "Bo’lajak muhandislarni kasbiy-ijodiy faoliyatga tayyorlashdagi pedagogik muammolar tahlili",
         "E.X.Salimov": "Bo’lajak muhandislarni raqamli texnologiyalar yordamida loyihalash faoliyatiga tayyorlash",
         "U.R.Panjiyev": "Aralash ta’lim muhitida bo’lajak ekologiya muhandislarini kasbiy faoliyatga tayyorlash texnologiyasi",
-        "U.R.Panjiyev": "Bo’lajak ekologik muhandislarni tayyorlashning hozirgi holati va uni rivojlantirishning nazariy asoslari",
-        "E.X.Salimov": "Zamonaviy texnologiyalarni iqtisodiy fanlarni o’qitishdagi o’rni va roli" 
+        "U.R.Panjiyev.": "Bo’lajak ekologik muhandislarni tayyorlashning hozirgi holati va uni rivojlantirishning nazariy asoslari",
+        "E.X.Salimov.": "Zamonaviy texnologiyalarni iqtisodiy fanlarni o’qitishdagi o’rni va roli" 
     },
     "6️⃣-sho‘ba. Global transformatsiyalar sharoitida ijtimoiy tadqiqotlar va zamonaviy filologiyaning dolzarb muammolari": {
             "Г.И.Колесникова": "Социально-философские составляющие категори «Счастье»",
