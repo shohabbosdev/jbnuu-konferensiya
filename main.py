@@ -82,11 +82,11 @@ if selected == "Sertifikat olish":
                     
             elif st.session_state['authentication_status'] is False:
                 st.error('Login yoki parol noto\'g\'ri.')
-                register()
+                
                 authenticator.experimental_guest_login('Login with Google', provider='google',oauth2=config['oauth2'])
                 forgot_password()
             elif st.session_state['authentication_status'] is None:
-                register()
+                
                 st.warning('Iltimos, foydalanuvchi nomi va parolingizni kiriting.')
 
         except Exception as e:
