@@ -23,14 +23,13 @@ st.set_page_config(page_title="JBNUU Conferences", page_icon="🔖", layout="wid
 with open('src/style.css','r', encoding='utf-8') as style:
     st.markdown(f"<style>{style.read()}</style>", unsafe_allow_html=True)
     
-st.title("💡 Konferensiya ishtirokchilari uchun sertifikat tayyorlash sahifasi")
+st.markdown("# 💡 :rainbow[Konferensiya ishtirokchilari uchun sertifikat tayyorlash sahifasi]")
 st.caption("Mirzo Ulugʻbek nomidagi Oʻzbekiston Milliy universitetining Jizzax filialida oʻtkaziladigan xalqaro ilmiy-texnik anjumani")
 
 # Yon panel
 with st.sidebar:
     selected = option_menu("Bosh sahifa", ["Sertifikat olish", 'Maqola talablari', "Dasturchi haqida"], icons=['house', 'gear', 'list-task'], menu_icon="cast", default_index=0)
     st.write("Konferensiya materiali")
-    st.image("src/To'plam yuzi_1.jpg", width=150, caption="Konferensiya xati", clamp=True)
     st.link_button("Anjuman xati", use_container_width=True, url="src/Xalqaro konferensiya_O'zMU JF_Axborot xati.pdf")
 
 if selected == "Sertifikat olish":
