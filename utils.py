@@ -5,9 +5,16 @@ from reportlab.lib.pagesizes import letter
 import base64
 import os
 
+# Shablonlarni keshlash uchun
+_template_cache = {}
+
 # Global o'zgaruvchilarni yangilash
 def load_template(template_name="template_1.png"):
     """Sertifikat shablonini yuklash"""
+    # Keshdan tekshirish
+    if template_name in _template_cache:
+        return _template_cache[template_name]
+    
     path = r'src/Times New Roman Bold.ttf'
     template_path = os.path.join('src', 'templates', template_name)
     
@@ -22,6 +29,8 @@ def load_template(template_name="template_1.png"):
         # Agar sertifikat shabloni mavjud bo'lmasa, oq fonli rasm yaratamiz
         TEMPLATE_IMAGE = Image.new('RGB', (800, 600), color='white')
     
+    # Keshga saqlash
+    _template_cache[template_name] = (FONT_FILE_1, FONT_FILE_2, TEMPLATE_IMAGE)
     return FONT_FILE_1, FONT_FILE_2, TEMPLATE_IMAGE
 
 # Sertifikat yasash qismi
@@ -122,5 +131,14 @@ def delete_template(template_name):
     template_path = os.path.join('src', 'templates', template_name)
     if os.path.exists(template_path):
         os.remove(template_path)
+        # Keshni tozalash
+        if template_name in _template_cache:
+            del _template_cache[template_name]
         return True
     return False
+
+# Keshni tozalash funksiyasi
+def clear_template_cache():
+    """Shablon keshini tozalash"""
+    global _template_cache
+    _template_cache.clear()

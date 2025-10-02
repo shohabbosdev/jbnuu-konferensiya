@@ -10,7 +10,7 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                RegisterError,
                                                ResetError,
                                                UpdateError)
-from utils import make_certificates, create_pdf_certificate
+from utils import make_certificates, create_pdf_certificate, get_available_templates
 from streamlit_option_menu import option_menu
 import plotly.express as px
 import pandas as pd
@@ -21,6 +21,10 @@ import shutil
 # JSON faylni o'qib olish
 with open('src/azolar.json', 'r', encoding='utf-8') as f:
     data = json.load(f)
+
+# Konfiguratsiya faylini o'qib olish
+with open('src/config.yaml', 'r', encoding='utf-8') as file:
+    config = yaml.load(file, Loader=SafeLoader)
     
 # Sahifa sozlamalari
 st.set_page_config(page_title="JBNUU Conferences", page_icon="🔖", layout="wide", initial_sidebar_state="expanded")
@@ -43,9 +47,6 @@ def check_role(required_roles):
     """Foydalanuvchi rolini tekshirish"""
     if st.session_state.get('authentication_status'):
         username = st.session_state.get('username')
-        with open('src/config.yaml', 'r', encoding='utf-8') as file:
-            config = yaml.load(file, Loader=SafeLoader)
-        
         user_roles = config['credentials']['usernames'].get(username, {}).get('roles', [])
         return any(role in user_roles for role in required_roles)
     return False
@@ -76,8 +77,6 @@ with st.sidebar:
         # Foydalanuvchi rolini tekshirish
         user_roles = []
         username = st.session_state.get('username')
-        with open('src/config.yaml', 'r', encoding='utf-8') as file:
-            config = yaml.load(file, Loader=SafeLoader)
         user_roles = config['credentials']['usernames'].get(username, {}).get('roles', [])
         
         # Agar foydalanuvchi admin bo'lsa, sertifikat shablonini boshqarish menyusini qo'shamiz
@@ -103,10 +102,6 @@ with st.sidebar:
                           menu_icon="cast", default_index=0)
 
 if selected == "Sertifikat olish":
-    # YAML konfiguratsiyani yuklash
-    with open('src/config.yaml', 'r', encoding='utf-8') as file:
-        config = yaml.load(file, Loader=SafeLoader)
-
     # Parollarni hash qilish
     stauth.Hasher.hash_passwords(config['credentials'])
 
@@ -278,20 +273,12 @@ elif selected == "Sertifikat shablonini boshqarish":
         st.error("Sizda bu sahifaga kirish huquqi mavjud emas!")
         st.stop()
     
-    # Konfiguratsiya faylini yuklash
-    with open('src/config.yaml', 'r', encoding='utf-8') as file:
-        config = yaml.load(file, Loader=SafeLoader)
-    
     # Joriy standart shablonni ko'rsatish
     default_template = config.get('settings', {}).get('default_template', 'template_1.png')
     st.markdown(f"## 📋 Joriy standart sertifikat shabloni: {default_template}")
     
     # Mavjud shablonlarni olish
-    templates_dir = 'src/templates'
-    if not os.path.exists(templates_dir):
-        os.makedirs(templates_dir)
-    
-    available_templates = [f for f in os.listdir(templates_dir) if f.endswith('.png')]
+    available_templates = get_available_templates()
     
     # Joriy sertifikat shablonlarini ko'rsatish
     st.markdown("## 📋 Mavjud sertifikat shablonlari")
@@ -299,7 +286,7 @@ elif selected == "Sertifikat shablonini boshqarish":
         cols = st.columns(min(3, len(available_templates)))  # 3 ta ustun
         for i, template in enumerate(available_templates):
             with cols[i % 3]:
-                template_path = os.path.join(templates_dir, template)
+                template_path = os.path.join('src', 'templates', template)
                 st.image(template_path, caption=template, use_container_width=True)
                 # Agar bu shablon standart bo'lsa, maxsus belgi ko'rsatamiz
                 if template == default_template:
@@ -309,17 +296,17 @@ elif selected == "Sertifikat shablonini boshqarish":
                     if st.button(f"Standart qilib belgilash", key=f"set_default_{template}"):
                         # Konfiguratsiya faylini yangilash
                         config['settings']['default_template'] = template
-                        with open('src/config.yaml', 'w', encoding='utf-8') as file:
-                            yaml.dump(config, file, default_flow_style=False)
+                        update_config_file(config)
                         st.success(f"'{template}' endi standart sertifikat shabloni!")
                         st.rerun()
                 
                 # O'chirish tugmasi uchun session state dan foydalanamiz
                 if st.button(f"❌ O'chirish", key=f"delete_{template}"):
-                    os.remove(template_path)
-                    st.success(f"{template} o'chirildi!")
-                    # Bu yerda st.rerun() ni chaqirmaymiz, o'rniga yangilash kerak
-                    st.rerun()
+                    template_path = os.path.join('src', 'templates', template)
+                    if os.path.exists(template_path):
+                        os.remove(template_path)
+                        st.success(f"{template} o'chirildi!")
+                        st.rerun()
     else:
         st.warning("Hozirda sertifikat shablonlari mavjud emas")
     
@@ -332,16 +319,16 @@ elif selected == "Sertifikat shablonini boshqarish":
     if uploaded_file is not None:
         # Yangi fayl nomini aniqlash
         template_name = uploaded_file.name
-        template_path = os.path.join(templates_dir, template_name)
+        template_path = os.path.join('src', 'templates', template_name)
         
         # Agar fayl nomi mavjud bo'lsa, uni yangilash
         if os.path.exists(template_path):
             base_name, ext = os.path.splitext(template_name)
             counter = 1
-            while os.path.exists(os.path.join(templates_dir, f"{base_name}_{counter}{ext}")):
+            while os.path.exists(os.path.join('src', 'templates', f"{base_name}_{counter}{ext}")):
                 counter += 1
             template_name = f"{base_name}_{counter}{ext}"
-            template_path = os.path.join(templates_dir, template_name)
+            template_path = os.path.join('src', 'templates', template_name)
         
         # Yangi faylni saqlash
         with open(template_path, 'wb') as f:
@@ -352,7 +339,6 @@ elif selected == "Sertifikat shablonini boshqarish":
             img = Image.open(template_path)
             st.success(f"Rasm hajmi: {img.size[0]}x{img.size[1]} pixels")
             st.success(f"Yangi sertifikat shabloni '{template_name}' muvaffaqiyatli yuklandi!")
-            # Bu yerda st.rerun() ni chaqirmaymiz, o'rniga xabar beramiz
             st.info("Shablonlar ro'yxatini yangilash uchun sahifani qayta yuklang")
         except Exception as e:
             st.error(f"Faylni ochishda xatolik: {e}")
@@ -447,9 +433,6 @@ elif selected == "Foydalanuvchilar":
     search_tab_index = len(tab_names) - 1 if check_role(['admin']) else -1
     
     # Foydalanuvchilarni yuklash
-    with open('src/config.yaml', 'r', encoding='utf-8') as file:
-        config = yaml.load(file, Loader=SafeLoader)
-    
     users = config['credentials']['usernames']
     
     # Foydalanuvchi boshqarish tabi (faqat admin uchun)
@@ -537,12 +520,8 @@ elif selected == "Foydalanuvchilar":
         with tabs[azolar_edit_tab_index]:
             st.markdown("## 📝 Azolar ma'lumotlarini tahrirlash")
             
-            # JSON faylini yuklash
-            with open('src/azolar.json', 'r', encoding='utf-8') as file:
-                azolar_data = json.load(file)
-            
             # Shubalarni ro'yxat qilish
-            shubalar = list(azolar_data.keys())
+            shubalar = list(data.keys())
             selected_shuba = st.selectbox("Shubani tanlang", shubalar)
             
             if selected_shuba:
@@ -557,9 +536,9 @@ elif selected == "Foydalanuvchilar":
                     if st.button("Qatnashchini qo'shish"):
                         if new_fio and new_mavzu:
                             # Yangi qatnashchini qo'shish
-                            azolar_data[selected_shuba][new_fio] = new_mavzu
+                            data[selected_shuba][new_fio] = new_mavzu
                             # JSON faylini yangilash
-                            update_json_file(azolar_data)
+                            update_json_file(data)
                             st.success(f"{new_fio} qatnashchisi muvaffaqiyatli qo'shildi!")
                             st.rerun()
                         else:
@@ -567,7 +546,7 @@ elif selected == "Foydalanuvchilar":
                 
                 # Mavjud qatnashchilarni tahrirlash
                 st.markdown("### Mavjud qatnashchilarni tahrirlash")
-                participants = azolar_data[selected_shuba]
+                participants = data[selected_shuba]
                 
                 # Har bir qatnashchi uchun tahrirlash imkoniyati
                 for fio, mavzu in participants.items():
@@ -580,22 +559,22 @@ elif selected == "Foydalanuvchilar":
                             if st.button("Yangilash", key=f"update_{fio}"):
                                 # Agar FIO o'zgartirilgan bo'lsa, eski yozuvni o'chirib tashlaymiz
                                 if edited_fio != fio:
-                                    del azolar_data[selected_shuba][fio]
+                                    del data[selected_shuba][fio]
                                 
                                 # Yangi yoki o'zgartirilgan yozuvni qo'shamiz
-                                azolar_data[selected_shuba][edited_fio] = edited_mavzu
+                                data[selected_shuba][edited_fio] = edited_mavzu
                                 
                                 # JSON faylini yangilash
-                                update_json_file(azolar_data)
+                                update_json_file(data)
                                 st.success(f"{edited_fio} ma'lumotlari yangilandi!")
                                 st.rerun()
                         
                         with col2:
                             if st.button("O'chirish", key=f"delete_{fio}"):
                                 # Qatnashchini o'chirish
-                                del azolar_data[selected_shuba][fio]
+                                del data[selected_shuba][fio]
                                 # JSON faylini yangilash
-                                update_json_file(azolar_data)
+                                update_json_file(data)
                                 st.success(f"{fio} o'chirildi!")
                                 st.rerun()
     
