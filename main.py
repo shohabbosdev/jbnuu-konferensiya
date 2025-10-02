@@ -89,7 +89,7 @@ if selected == "Sertifikat olish":
                     # PDF yuklab olish tugmasi
                     pdf_buffer = create_pdf_certificate(familiya, maqola_matni)
                     st.download_button(
-                        label="PDF sertifikatni yuklab olish",
+                        label="Sertifikat yuklab olish",
                         data=pdf_buffer,
                         file_name=f"sertifikat_{familiya}.pdf",
                         mime="application/pdf",
