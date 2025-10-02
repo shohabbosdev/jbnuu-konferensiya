@@ -275,13 +275,13 @@ elif selected == "Sertifikat shablonini boshqarish":
     
     # Joriy standart shablonni ko'rsatish
     default_template = config.get('settings', {}).get('default_template', 'template_1.png')
-    st.markdown(f"## 📋 Joriy standart sertifikat shabloni: {default_template}")
+    st.markdown(f"###### 📋 Joriy standart sertifikat shabloni: {default_template}")
     
     # Mavjud shablonlarni olish
     available_templates = get_available_templates()
     
     # Joriy sertifikat shablonlarini ko'rsatish
-    st.markdown("## 📋 Mavjud sertifikat shablonlari")
+    st.markdown("###### 📋 Mavjud sertifikat shablonlari")
     if available_templates:
         cols = st.columns(min(3, len(available_templates)))  # 3 ta ustun
         for i, template in enumerate(available_templates):
@@ -311,7 +311,7 @@ elif selected == "Sertifikat shablonini boshqarish":
         st.warning("Hozirda sertifikat shablonlari mavjud emas")
     
     # Yangi sertifikat shablonini yuklash
-    st.markdown("## 📤 Yangi sertifikat shablonini yuklash")
+    st.markdown("#### 📤 Yangi sertifikat shablonini yuklash")
     st.info("Eslatma: Yangi sertifikat shabloni PNG formatida bo'lishi kerak")
     
     uploaded_file = st.file_uploader("PNG faylni tanlang", type=['png'], key="template_uploader")
@@ -347,7 +347,7 @@ elif selected == "Sertifikat shablonini boshqarish":
                 os.remove(template_path)
     
     # Backup shablonni qayta tiklash
-    st.markdown("## 🔄 Backup shablonni qayta tiklash")
+    st.markdown("#### 🔄 Backup shablonni qayta tiklash")
     if os.path.exists('src/Sertifikat_backup.png'):
         st.info("Backup sertifikat shabloni mavjud")
         if st.button("Backup shablonni qayta tiklash"):
