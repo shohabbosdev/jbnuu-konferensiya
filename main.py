@@ -14,6 +14,9 @@ from utils import make_certificates, create_pdf_certificate
 from streamlit_option_menu import option_menu
 import plotly.express as px
 import pandas as pd
+import os
+from PIL import Image
+import shutil
 
 # JSON faylni o'qib olish
 with open('src/azolar.json', 'r', encoding='utf-8') as f:
@@ -28,9 +31,69 @@ with open('src/style.css','r', encoding='utf-8') as style:
 st.markdown("# 💡 :rainbow[Konferensiya ishtirokchilari uchun sertifikat tayyorlash sahifasi]")
 st.caption("Mirzo Ulugʻbek nomidagi Oʻzbekiston Milliy universitetining Jizzax filialida oʻtkaziladigan xalqaro ilmiy-texnik anjumani")
 
+# Foydalanuvchi rolini tekshirish funksiyasi
+def check_role(required_roles):
+    """Foydalanuvchi rolini tekshirish"""
+    if st.session_state.get('authentication_status'):
+        username = st.session_state.get('username')
+        with open('src/config.yaml', 'r', encoding='utf-8') as file:
+            config = yaml.load(file, Loader=SafeLoader)
+        
+        user_roles = config['credentials']['usernames'].get(username, {}).get('roles', [])
+        return any(role in user_roles for role in required_roles)
+    return False
+
+# YAML faylini yangilash
+def update_config_file(config):
+    with open('src/config.yaml', 'w', encoding='utf-8') as file:
+        yaml.dump(config, file, default_flow_style=False)
+
+# JSON faylini yangilash
+def update_json_file(data):
+    with open('src/azolar.json', 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
+# Parollarni hash qilish
+def hash_password(password):
+    # Yangi Hasher obyektini yaratish va parolni hash qilish
+    return Hasher.hash(password)
+
 # Yon panel
 with st.sidebar:
-    selected = option_menu("Bosh sahifa", ["Sertifikat olish", "Statistika", "Dasturchi haqida"], icons=['house', 'bar-chart', 'list-task'], menu_icon="cast", default_index=0)
+    # Asosiy menyuni yaratish
+    menu_items = ["Sertifikat olish"]
+    menu_icons = ['house']
+    
+    # Agar foydalanuvchi tizimga kirgan bo'lsa
+    if st.session_state.get('authentication_status'):
+        # Foydalanuvchi rolini tekshirish
+        user_roles = []
+        username = st.session_state.get('username')
+        with open('src/config.yaml', 'r', encoding='utf-8') as file:
+            config = yaml.load(file, Loader=SafeLoader)
+        user_roles = config['credentials']['usernames'].get(username, {}).get('roles', [])
+        
+        # Agar foydalanuvchi admin bo'lsa, sertifikat shablonini boshqarish menyusini qo'shamiz
+        if check_role(['admin']):
+            menu_items.append("Sertifikat shablonini boshqarish")
+            menu_icons.append('image')
+        
+        # Agar foydalanuvchi admin, editor yoki viewer bo'lsa, statistika menyusini qo'shamiz
+        if check_role(['admin', 'editor', 'viewer']):
+            menu_items.append("Statistika")
+            menu_icons.append('bar-chart')
+        
+        # Agar foydalanuvchi admin yoki editor bo'lsa, foydalanuvchilar menyusini qo'shamiz
+        if check_role(['admin', 'editor']):
+            menu_items.append("Foydalanuvchilar")
+            menu_icons.append('people')
+    
+    menu_items.append("Dasturchi haqida")
+    menu_icons.append('list-task')
+    
+    selected = option_menu("Bosh sahifa", menu_items, 
+                          icons=menu_icons, 
+                          menu_icon="cast", default_index=0)
 
 if selected == "Sertifikat olish":
     # YAML konfiguratsiyani yuklash
@@ -91,7 +154,7 @@ if selected == "Sertifikat olish":
                     # PDF yuklab olish tugmasi
                     pdf_buffer = create_pdf_certificate(familiya, maqola_matni)
                     st.download_button(
-                        label="🔽 Sertifikatni pdf fayl ko'rinishida yuklab olish",
+                        label="PDF sertifikatni yuklab olish",
                         data=pdf_buffer,
                         file_name=f"sertifikat_{familiya}.pdf",
                         mime="application/pdf",
@@ -119,7 +182,7 @@ if selected == "Sertifikat olish":
                 email, username, name = authenticator.register_user(captcha=True, location='sidebar', roles=['viewer'])
                 if email:
                     st.success(f"Foydalanuvchi {username}, {name} bilan muvaffaqiyatli ro'yxatdan o'tdi.")
-                    update_config_file()
+                    update_config_file(config)
                     update_user_details()
                 else:
                     st.warning("Ro'yxatdan o'tishda xatolik yuz berdi.")
@@ -133,7 +196,7 @@ if selected == "Sertifikat olish":
             try:
                 if authenticator.reset_password(st.session_state['username']):
                     st.success('Password modified successfully')
-                update_config_file()
+                update_config_file(config)
             except Exception as e:
                 st.error(e)
 
@@ -152,7 +215,7 @@ if selected == "Sertifikat olish":
                     st.error('Foydalanuvchi topilmadi')
             except ForgotError as e:
                 st.error(e)
-        update_config_file()
+        update_config_file(config)
 
     # Foydalanuvchi ma'lumotlarini yangilash
     def update_user_details():
@@ -164,16 +227,80 @@ if selected == "Sertifikat olish":
             except UpdateError as e:
                 st.error(e)
 
-    # YAML faylini yangilash
-    def update_config_file():
-        with open('src/config.yaml', 'w', encoding='utf-8') as file:
-            yaml.dump(config, file, default_flow_style=False)
-
     # Asosiy qism
     if __name__ == "__main__":
         login()
 
+elif selected == "Sertifikat shablonini boshqarish":
+    st.markdown("# 🖼️ Sertifikat shablonini boshqarish")
+    
+    # Faqat admin foydalanuvchilar kirishi mumkin
+    if not check_role(['admin']):
+        st.error("Sizda bu sahifaga kirish huquqi mavjud emas!")
+        st.stop()
+    
+    # Joriy sertifikat shablonini ko'rsatish
+    st.markdown("## 📋 Joriy sertifikat shabloni")
+    if os.path.exists('src/Sertifikat.png'):
+        st.image('src/Sertifikat.png', caption="Joriy sertifikat shabloni", use_column_width=True)
+    else:
+        st.warning("Hozirda sertifikat shabloni mavjud emas")
+    
+    # Yangi sertifikat shablonini yuklash
+    st.markdown("## 📤 Yangi sertifikat shablonini yuklash")
+    st.info("Eslatma: Yangi sertifikat shabloni PNG formatida bo'lishi kerak")
+    
+    uploaded_file = st.file_uploader("PNG faylni tanlang", type=['png'])
+    
+    if uploaded_file is not None:
+        # Yangi faylni saqlash
+        with open(os.path.join('src', 'Sertifikat_new.png'), 'wb') as f:
+            f.write(uploaded_file.getbuffer())
+        
+        # Rasm hajmini tekshirish
+        try:
+            img = Image.open(os.path.join('src', 'Sertifikat_new.png'))
+            st.success(f"Rasm hajmi: {img.size[0]}x{img.size[1]} pixels")
+            
+            # Yangi shablonni qo'llash tugmasi
+            if st.button("Yangi shablonni qo'llash"):
+                # Eski faylni backup qilish
+                if os.path.exists('src/Sertifikat.png'):
+                    shutil.copy('src/Sertifikat.png', 'src/Sertifikat_backup.png')
+                
+                # Yangi faylni asosiy sifatida saqlash
+                shutil.move('src/Sertifikat_new.png', 'src/Sertifikat.png')
+                st.success("Yangi sertifikat shabloni muvaffaqiyatli qo'llanildi!")
+                st.rerun()
+                
+        except Exception as e:
+            st.error(f"Faylni ochishda xatolik: {e}")
+            # Xato faylni o'chirib tashlash
+            if os.path.exists('src/Sertifikat_new.png'):
+                os.remove('src/Sertifikat_new.png')
+    
+    # Backup shablonni qayta tiklash
+    st.markdown("## 🔄 Backup shablonni qayta tiklash")
+    if os.path.exists('src/Sertifikat_backup.png'):
+        st.info("Backup sertifikat shabloni mavjud")
+        if st.button("Backup shablonni qayta tiklash"):
+            shutil.copy('src/Sertifikat_backup.png', 'src/Sertifikat.png')
+            st.success("Backup shablon muvaffaqiyatli qayta tiklandi!")
+            st.rerun()
+    else:
+        st.info("Hozirda backup sertifikat shabloni mavjud emas")
+
 elif selected == "Statistika":
+    # Faqat tizimga kirgan foydalanuvchilar kirishi mumkin
+    if not st.session_state.get('authentication_status'):
+        st.error("Sizda bu sahifaga kirish huquqi mavjud emas! Iltimos, tizimga kiring.")
+        st.stop()
+    
+    # Faqat admin, editor yoki viewer rollariga ega foydalanuvchilar kirishi mumkin
+    if not check_role(['admin', 'editor', 'viewer']):
+        st.error("Sizda bu sahifaga kirish huquqi mavjud emas!")
+        st.stop()
+    
     st.markdown("# 📊 Statistika")
     
     # Statistik ma'lumotlarni tayyorlash
@@ -201,6 +328,235 @@ elif selected == "Statistika":
     # Jadval ko'rinishida
     st.markdown("### 📋 Batafsil statistika")
     st.dataframe(df, use_container_width=True)
+
+elif selected == "Foydalanuvchilar":
+    # Faqat tizimga kirgan foydalanuvchilar kirishi mumkin
+    if not st.session_state.get('authentication_status'):
+        st.error("Sizda bu sahifaga kirish huquqi mavjud emas! Iltimos, tizimga kiring.")
+        st.stop()
+    
+    # Faqat admin va editor rollariga ega foydalanuvchilar kirishi mumkin
+    if not check_role(['admin', 'editor']):
+        st.error("Sizda bu sahifaga kirish huquqi mavjud emas!")
+        st.stop()
+    
+    st.markdown("# 👥 Foydalanuvchilar")
+    
+    # Tablarni yaratish
+    tab_names = []
+    
+    # Agar foydalanuvchi admin bo'lsa, foydalanuvchilarni boshqarish tabini qo'shamiz
+    if check_role(['admin']):
+        tab_names.append("Foydalanuvchi boshqarish")
+    
+    # Agar foydalanuvchi admin yoki editor bo'lsa, azolar ma'lumotlarini tahrirlash tabini qo'shamiz
+    if check_role(['admin', 'editor']):
+        tab_names.append("Azolar ma'lumotlarini tahrirlash")
+    
+    # Qidiruv tabini barcha foydalanuvchilarga ko'rsatamiz
+    tab_names.append("Qidiruv")
+    
+    # Tablarni yaratish
+    tabs = st.tabs(tab_names)
+    
+    # Tab indekslarini aniqlash
+    user_management_tab_index = 0 if check_role(['admin']) else -1
+    azolar_edit_tab_index = 1 if check_role(['admin']) else 0
+    search_tab_index = len(tab_names) - 1
+    
+    # Foydalanuvchilarni yuklash
+    with open('src/config.yaml', 'r', encoding='utf-8') as file:
+        config = yaml.load(file, Loader=SafeLoader)
+    
+    users = config['credentials']['usernames']
+    
+    # Foydalanuvchi boshqarish tabi (faqat admin uchun)
+    if check_role(['admin']) and user_management_tab_index >= 0:
+        with tabs[user_management_tab_index]:
+            st.markdown("## 🛠️ Foydalanuvchi boshqarish")
+            
+            # Yangi foydalanuvchi qo'shish
+            with st.expander("➕ Yangi foydalanuvchi qo'shish"):
+                new_username = st.text_input("Foydalanuvchi nomi")
+                new_email = st.text_input("Email")
+                new_first_name = st.text_input("Ism")
+                new_last_name = st.text_input("Familiya")
+                new_password = st.text_input("Parol", type="password")
+                new_roles = st.multiselect("Rollar", ["admin", "editor", "viewer"], default=["viewer"], key="new_user_roles")
+                
+                if st.button("Foydalanuvchi qo'shish"):
+                    if new_username and new_email and new_first_name and new_last_name and new_password:
+                        # Foydalanuvchi mavjudligini tekshirish
+                        if new_username not in users:
+                            # Yangi foydalanuvchini qo'shish
+                            users[new_username] = {
+                                "email": new_email,
+                                "first_name": new_first_name,
+                                "last_name": new_last_name,
+                                "password": hash_password(new_password),
+                                "roles": new_roles
+                            }
+                            
+                            # Konfiguratsiya faylini yangilash
+                            update_config_file(config)
+                            st.success(f"{new_username} foydalanuvchisi muvaffaqiyatli qo'shildi!")
+                            st.rerun()
+                        else:
+                            st.error("Bu foydalanuvchi nomi allaqachon mavjud!")
+                    else:
+                        st.error("Barcha maydonlarni to'ldiring!")
+            
+            # Foydalanuvchini tahrirlash
+            st.markdown("## ✏️ Foydalanuvchini tahrirlash")
+            edit_username = st.selectbox("Tahrirlash uchun foydalanuvchini tanlang", list(users.keys()))
+            
+            if edit_username:
+                user_data = users[edit_username]
+                edit_email = st.text_input("Email", value=user_data.get("email", ""))
+                edit_first_name = st.text_input("Ism", value=user_data.get("first_name", ""))
+                edit_last_name = st.text_input("Familiya", value=user_data.get("last_name", ""))
+                edit_roles = st.multiselect("Rollar", ["admin", "editor", "viewer"], 
+                                        default=user_data.get("roles", ["viewer"]), 
+                                        key=f"edit_user_roles_{edit_username}")
+                
+                # Parolni o'zgartirish
+                change_password = st.checkbox("Parolni o'zgartirish")
+                new_password = ""
+                if change_password:
+                    new_password = st.text_input("Yangi parol", type="password", key=f"new_password_{edit_username}")
+                
+                if st.button("Foydalanuvchini yangilash"):
+                    # Foydalanuvchi ma'lumotlarini yangilash
+                    users[edit_username]["email"] = edit_email
+                    users[edit_username]["first_name"] = edit_first_name
+                    users[edit_username]["last_name"] = edit_last_name
+                    users[edit_username]["roles"] = edit_roles
+                    
+                    # Agar parol o'zgartirilmoqda bo'lsa
+                    if change_password and new_password:
+                        users[edit_username]["password"] = hash_password(new_password)
+                    
+                    # Konfiguratsiya faylini yangilash
+                    update_config_file(config)
+                    st.success(f"{edit_username} foydalanuvchisi muvaffaqiyatli yangilandi!")
+                    st.rerun()
+                
+                # Foydalanuvchini o'chirish
+                if st.button("Foydalanuvchini o'chirish", type="primary"):
+                    if edit_username in users:
+                        del users[edit_username]
+                        # Konfiguratsiya faylini yangilash
+                        update_config_file(config)
+                        st.success(f"{edit_username} foydalanuvchisi muvaffaqiyatli o'chirildi!")
+                        st.rerun()
+    
+    # Azolar ma'lumotlarini tahrirlash tabi (admin va editor uchun)
+    if check_role(['admin', 'editor']) and azolar_edit_tab_index >= 0:
+        with tabs[azolar_edit_tab_index]:
+            st.markdown("## 📝 Azolar ma'lumotlarini tahrirlash")
+            
+            # JSON faylini yuklash
+            with open('src/azolar.json', 'r', encoding='utf-8') as file:
+                azolar_data = json.load(file)
+            
+            # Shubalarni ro'yxat qilish
+            shubalar = list(azolar_data.keys())
+            selected_shuba = st.selectbox("Shubani tanlang", shubalar)
+            
+            if selected_shuba:
+                # Tanlangan shubadagi ishtirokchilarni ko'rsatish
+                st.markdown(f"### {selected_shuba} ishtirokchilari")
+                
+                # Yangi qatnashchini qo'shish
+                with st.expander("➕ Yangi qatnashchi qo'shish"):
+                    new_fio = st.text_input("Familiya Ism Sharif")
+                    new_mavzu = st.text_input("Mavzu")
+                    
+                    if st.button("Qatnashchini qo'shish"):
+                        if new_fio and new_mavzu:
+                            # Yangi qatnashchini qo'shish
+                            azolar_data[selected_shuba][new_fio] = new_mavzu
+                            # JSON faylini yangilash
+                            update_json_file(azolar_data)
+                            st.success(f"{new_fio} qatnashchisi muvaffaqiyatli qo'shildi!")
+                            st.rerun()
+                        else:
+                            st.error("Barcha maydonlarni to'ldiring!")
+                
+                # Mavjud qatnashchilarni tahrirlash
+                st.markdown("### Mavjud qatnashchilarni tahrirlash")
+                participants = azolar_data[selected_shuba]
+                
+                # Har bir qatnashchi uchun tahrirlash imkoniyati
+                for fio, mavzu in participants.items():
+                    with st.expander(f"📝 {fio}"):
+                        edited_fio = st.text_input("Familiya Ism Sharif", value=fio, key=f"fio_{fio}")
+                        edited_mavzu = st.text_input("Mavzu", value=mavzu, key=f"mavzu_{fio}")
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("Yangilash", key=f"update_{fio}"):
+                                # Agar FIO o'zgartirilgan bo'lsa, eski yozuvni o'chirib tashlaymiz
+                                if edited_fio != fio:
+                                    del azolar_data[selected_shuba][fio]
+                                
+                                # Yangi yoki o'zgartirilgan yozuvni qo'shamiz
+                                azolar_data[selected_shuba][edited_fio] = edited_mavzu
+                                
+                                # JSON faylini yangilash
+                                update_json_file(azolar_data)
+                                st.success(f"{edited_fio} ma'lumotlari yangilandi!")
+                                st.rerun()
+                        
+                        with col2:
+                            if st.button("O'chirish", key=f"delete_{fio}"):
+                                # Qatnashchini o'chirish
+                                del azolar_data[selected_shuba][fio]
+                                # JSON faylini yangilash
+                                update_json_file(azolar_data)
+                                st.success(f"{fio} o'chirildi!")
+                                st.rerun()
+    
+    # Qidiruv tabi (barcha foydalanuvchilarga)
+    with tabs[search_tab_index]:
+        # Foydalanuvchilarni qidirish
+        st.markdown("## 🔍 Foydalanuvchilarni qidirish")
+        
+        # Qidiruv maydoni
+        search_query = st.text_input("Qidiruv", placeholder="Foydalanuvchi nomi, ismi yoki emailni kiriting...")
+        
+        # Filtirlangan foydalanuvchilar
+        filtered_users = {}
+        if search_query:
+            for username, user_data in users.items():
+                # Qidiruv so'rovi foydalanuvchi nomi, ismi yoki emailda mavjud bo'lsa
+                if (search_query.lower() in username.lower() or 
+                    search_query.lower() in user_data.get('first_name', '').lower() or
+                    search_query.lower() in user_data.get('last_name', '').lower() or
+                    search_query.lower() in user_data.get('email', '').lower()):
+                    filtered_users[username] = user_data
+        else:
+            filtered_users = users
+        
+        # Foydalanuvchilar jadvali
+        if filtered_users:
+            st.markdown(f"### 📋 Topilgan foydalanuvchilar ({len(filtered_users)})")
+            
+            # Foydalanuvchilar uchun DataFrame yaratish
+            user_data = []
+            for username, user_info in filtered_users.items():
+                user_data.append({
+                    "Foydalanuvchi nomi": username,
+                    "Ism": user_info.get('first_name', ''),
+                    "Familiya": user_info.get('last_name', ''),
+                    "Email": user_info.get('email', ''),
+                    "Ro'lar": ', '.join(user_info.get('roles', [])) if user_info.get('roles') else ''
+                })
+            
+            df = pd.DataFrame(user_data)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("Hech qanday foydalanuvchi topilmadi.")
 
 elif selected == "Dasturchi haqida":
     st.write("*Dasturchi haqida*")

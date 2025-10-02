@@ -7,12 +7,19 @@ credentials:
     administrator:
       email: shohabbosdev@gmail.com
       failed_login_attempts: 3
-      first_name: Admincha
+      first_name: Admin
       last_name: Adminov
       logged_in: false
       password: $2b$12$KErURko72zNjxss31x8pJ.BCxGEwsr5ksWFabOAIj.nDVfwebW6O2
       roles:
       - viewer
+    behruzbek:
+      email: admin@gmail.com
+      first_name: behruzbek
+      last_name: behruzbekov
+      password: $2b$12$1agERIpSw20Xe5aFiUG2yeS5qb1ckIcjwdUWNKhekdizNnq0zntIu
+      roles:
+      - editor
     shohabbosdev:
       email: ushohabbos@gmail.com
       failed_login_attempts: 1

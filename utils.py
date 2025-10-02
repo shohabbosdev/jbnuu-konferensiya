@@ -3,14 +3,31 @@ from PIL import Image, ImageFont, ImageDraw
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import base64
+import os
 
-path = r'src/Times New Roman Bold.ttf'
-# Global Variables
-FONT_FILE_1 = ImageFont.truetype(path, 30)
-FONT_FILE_2 = ImageFont.truetype(path, 14)
+# Global o'zgaruvchilarni yangilash
+def load_template():
+    """Sertifikat shablonini yuklash"""
+    path = r'src/Times New Roman Bold.ttf'
+    template_path = r'src/Sertifikat.png'
+    
+    # Shriftlarni yuklash
+    FONT_FILE_1 = ImageFont.truetype(path, 30)
+    FONT_FILE_2 = ImageFont.truetype(path, 14)
+    
+    # Sertifikat shablonini yuklash
+    if os.path.exists(template_path):
+        TEMPLATE_IMAGE = Image.open(template_path)
+    else:
+        # Agar sertifikat shabloni mavjud bo'lmasa, oq fonli rasm yaratamiz
+        TEMPLATE_IMAGE = Image.new('RGB', (800, 600), color='white')
+    
+    return FONT_FILE_1, FONT_FILE_2, TEMPLATE_IMAGE
+
+# Global o'zgaruvchilarni ishga tushirish
+FONT_FILE_1, FONT_FILE_2, TEMPLATE_IMAGE = load_template()
 FONT_COLOR_1 = "#5E17EB"
 FONT_COLOR_2 = "#0E477D"
-TEMPLATE_IMAGE = Image.open(r'src/Sertifikat.png')
 WIDTH, HEIGHT = TEMPLATE_IMAGE.size
 MAX_WIDTH = WIDTH - 80  # Ikkinchi matn uchun maksimal eni
 MAX_WORDS_PER_LINE = 8  # Har bir qatorda maksimal so'z soni
@@ -18,6 +35,16 @@ OUTPUT_DIR = "out"
 
 # Sertifikat yasash qismi
 def make_certificates(name, second_text):
+    # Sertifikat shablonini yangilash
+    global TEMPLATE_IMAGE, WIDTH, HEIGHT, MAX_WIDTH
+    FONT_FILE_1, FONT_FILE_2, new_template = load_template()
+    
+    # Agar shablon o'zgargan bo'lsa, global o'zgaruvchilarni yangilash
+    if new_template.size != TEMPLATE_IMAGE.size:
+        TEMPLATE_IMAGE = new_template
+        WIDTH, HEIGHT = TEMPLATE_IMAGE.size
+        MAX_WIDTH = WIDTH - 80
+    
     template = TEMPLATE_IMAGE.copy()
     draw = ImageDraw.Draw(template)
 
