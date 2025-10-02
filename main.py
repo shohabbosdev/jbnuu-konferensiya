@@ -149,6 +149,13 @@ if selected == "Sertifikat olish":
                 # 1. Shuba tanlash
                 shuba = st.selectbox("Shubani tanlang:", list(data.keys()))
                 
+                # Standart shablonni olish
+                selected_template = config.get('settings', {}).get('default_template', 'template_1.png')
+                
+                # Agar admin foydalanuvchi bo'lsa, shablonni ko'rsatish (tanlash imkonini bermasdan)
+                if check_role(['admin']):
+                    st.info(f"Standart sertifikat shabloni: {selected_template}")
+                
                 # Initsializatsiya
                 familiya = None
                 maqola_matni = None
@@ -173,12 +180,12 @@ if selected == "Sertifikat olish":
                     st.session_state.shuba_name = None
                 
                 if createButton and familiya and maqola_matni:
-                    st.session_state.certificate_image = make_certificates(familiya, maqola_matni)
+                    st.session_state.certificate_image = make_certificates(familiya, maqola_matni, selected_template)
                     st.session_state.shuba_name = shuba
-                    st.image(st.session_state.certificate_image, caption=shuba)
+                    st.image(st.session_state.certificate_image, caption=shuba, use_container_width=True)
                     
                     # PDF yuklab olish tugmasi
-                    pdf_buffer = create_pdf_certificate(familiya, maqola_matni)
+                    pdf_buffer = create_pdf_certificate(familiya, maqola_matni, selected_template)
                     st.download_button(
                         label="PDF sertifikatni yuklab olish",
                         data=pdf_buffer,
@@ -271,45 +278,87 @@ elif selected == "Sertifikat shablonini boshqarish":
         st.error("Sizda bu sahifaga kirish huquqi mavjud emas!")
         st.stop()
     
-    # Joriy sertifikat shablonini ko'rsatish
-    st.markdown("## 📋 Joriy sertifikat shabloni")
-    if os.path.exists('src/Sertifikat.png'):
-        st.image('src/Sertifikat.png', caption="Joriy sertifikat shabloni", use_column_width=True)
+    # Konfiguratsiya faylini yuklash
+    with open('src/config.yaml', 'r', encoding='utf-8') as file:
+        config = yaml.load(file, Loader=SafeLoader)
+    
+    # Joriy standart shablonni ko'rsatish
+    default_template = config.get('settings', {}).get('default_template', 'template_1.png')
+    st.markdown(f"## 📋 Joriy standart sertifikat shabloni: {default_template}")
+    
+    # Mavjud shablonlarni olish
+    templates_dir = 'src/templates'
+    if not os.path.exists(templates_dir):
+        os.makedirs(templates_dir)
+    
+    available_templates = [f for f in os.listdir(templates_dir) if f.endswith('.png')]
+    
+    # Joriy sertifikat shablonlarini ko'rsatish
+    st.markdown("## 📋 Mavjud sertifikat shablonlari")
+    if available_templates:
+        cols = st.columns(min(3, len(available_templates)))  # 3 ta ustun
+        for i, template in enumerate(available_templates):
+            with cols[i % 3]:
+                template_path = os.path.join(templates_dir, template)
+                st.image(template_path, caption=template, use_container_width=True)
+                # Agar bu shablon standart bo'lsa, maxsus belgi ko'rsatamiz
+                if template == default_template:
+                    st.markdown("⭐ **Standart**")
+                else:
+                    # Agar bu shablon standart bo'lmasa, uni standart qilib belgilash tugmasini ko'rsatamiz
+                    if st.button(f"Standart qilib belgilash", key=f"set_default_{template}"):
+                        # Konfiguratsiya faylini yangilash
+                        config['settings']['default_template'] = template
+                        with open('src/config.yaml', 'w', encoding='utf-8') as file:
+                            yaml.dump(config, file, default_flow_style=False)
+                        st.success(f"'{template}' endi standart sertifikat shabloni!")
+                        st.rerun()
+                
+                # O'chirish tugmasi uchun session state dan foydalanamiz
+                if st.button(f"❌ O'chirish", key=f"delete_{template}"):
+                    os.remove(template_path)
+                    st.success(f"{template} o'chirildi!")
+                    # Bu yerda st.rerun() ni chaqirmaymiz, o'rniga yangilash kerak
+                    st.rerun()
     else:
-        st.warning("Hozirda sertifikat shabloni mavjud emas")
+        st.warning("Hozirda sertifikat shablonlari mavjud emas")
     
     # Yangi sertifikat shablonini yuklash
     st.markdown("## 📤 Yangi sertifikat shablonini yuklash")
     st.info("Eslatma: Yangi sertifikat shabloni PNG formatida bo'lishi kerak")
     
-    uploaded_file = st.file_uploader("PNG faylni tanlang", type=['png'])
+    uploaded_file = st.file_uploader("PNG faylni tanlang", type=['png'], key="template_uploader")
     
     if uploaded_file is not None:
+        # Yangi fayl nomini aniqlash
+        template_name = uploaded_file.name
+        template_path = os.path.join(templates_dir, template_name)
+        
+        # Agar fayl nomi mavjud bo'lsa, uni yangilash
+        if os.path.exists(template_path):
+            base_name, ext = os.path.splitext(template_name)
+            counter = 1
+            while os.path.exists(os.path.join(templates_dir, f"{base_name}_{counter}{ext}")):
+                counter += 1
+            template_name = f"{base_name}_{counter}{ext}"
+            template_path = os.path.join(templates_dir, template_name)
+        
         # Yangi faylni saqlash
-        with open(os.path.join('src', 'Sertifikat_new.png'), 'wb') as f:
+        with open(template_path, 'wb') as f:
             f.write(uploaded_file.getbuffer())
         
         # Rasm hajmini tekshirish
         try:
-            img = Image.open(os.path.join('src', 'Sertifikat_new.png'))
+            img = Image.open(template_path)
             st.success(f"Rasm hajmi: {img.size[0]}x{img.size[1]} pixels")
-            
-            # Yangi shablonni qo'llash tugmasi
-            if st.button("Yangi shablonni qo'llash"):
-                # Eski faylni backup qilish
-                if os.path.exists('src/Sertifikat.png'):
-                    shutil.copy('src/Sertifikat.png', 'src/Sertifikat_backup.png')
-                
-                # Yangi faylni asosiy sifatida saqlash
-                shutil.move('src/Sertifikat_new.png', 'src/Sertifikat.png')
-                st.success("Yangi sertifikat shabloni muvaffaqiyatli qo'llanildi!")
-                st.rerun()
-                
+            st.success(f"Yangi sertifikat shabloni '{template_name}' muvaffaqiyatli yuklandi!")
+            # Bu yerda st.rerun() ni chaqirmaymiz, o'rniga xabar beramiz
+            st.info("Shablonlar ro'yxatini yangilash uchun sahifani qayta yuklang")
         except Exception as e:
             st.error(f"Faylni ochishda xatolik: {e}")
             # Xato faylni o'chirib tashlash
-            if os.path.exists('src/Sertifikat_new.png'):
-                os.remove('src/Sertifikat_new.png')
+            if os.path.exists(template_path):
+                os.remove(template_path)
     
     # Backup shablonni qayta tiklash
     st.markdown("## 🔄 Backup shablonni qayta tiklash")

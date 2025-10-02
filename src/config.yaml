@@ -45,3 +45,5 @@ pre-authorized:
   emails:
   - ushohabbos@gmail.com
   - kuvandikovjora@gmail.com
+settings:
+  default_template: template_1.png
