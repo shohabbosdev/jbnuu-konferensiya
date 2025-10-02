@@ -30,7 +30,7 @@ st.caption("Mirzo Ulugʻbek nomidagi Oʻzbekiston Milliy universitetining Jizzax
 
 # Yon panel
 with st.sidebar:
-    selected = option_menu("Bosh sahifa", ["Sertifikat olish", 'Maqola talablari', "Statistika", "Dasturchi haqida"], icons=['house', 'gear', 'bar-chart', 'list-task'], menu_icon="cast", default_index=0)
+    selected = option_menu("Bosh sahifa", ["Sertifikat olish", "Statistika", "Dasturchi haqida"], icons=['house', 'bar-chart', 'list-task'], menu_icon="cast", default_index=0)
     st.write("Konferensiya materiali")
     st.link_button("Anjuman xati", url="src/Xalqaro konferensiya_O'zMU JF_Axborot xati.pdf", use_container_width=True)
 
@@ -174,15 +174,6 @@ if selected == "Sertifikat olish":
     # Asosiy qism
     if __name__ == "__main__":
         login()
-
-elif selected=="Maqola talablari":
-    st.write("*Axborot xati*")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_1.jpg")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_2.jpg")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_3.jpg")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_4.jpg")
-    st.link_button("1-2-3-shoʻbalarga telegram havola", url=" https://t.me/UzMU_JF_conf_1_2_3_shob", icon="1️⃣")
-    st.link_button("4-5-6-shoʻbalarga telegram havola", url=" https://t.me/Uzmu_JF_konf_4_5_6_shuba", icon="2️⃣")
 
 elif selected == "Statistika":
     st.markdown("# 📊 Statistika")
