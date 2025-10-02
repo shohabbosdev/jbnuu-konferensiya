@@ -25,6 +25,13 @@ with open('src/azolar.json', 'r', encoding='utf-8') as f:
 # Sahifa sozlamalari
 st.set_page_config(page_title="JBNUU Conferences", page_icon="🔖", layout="wide", initial_sidebar_state="expanded")
 
+# Urinishlar sonini kuzatish uchun session state ni ishga tushiramiz
+if 'login_attempts' not in st.session_state:
+    st.session_state.login_attempts = {}
+
+# Maksimal urinishlar soni
+MAX_LOGIN_ATTEMPTS = 3
+
 with open('src/style.css','r', encoding='utf-8') as style:
     st.markdown(f"<style>{style.read()}</style>", unsafe_allow_html=True)
     
@@ -114,8 +121,27 @@ if selected == "Sertifikat olish":
     # Login funksiya
     def login():
         try:
+            # Foydalanuvchi IP manzilini olish (Streamlit-da session ID dan foydalanamiz)
+            user_identifier = st.session_state.get('username', 'unknown_user')
+            
+            # Agar foydalanuvchi uchun urinishlar soni mavjud bo'lmasa, uni yaratamiz
+            if user_identifier not in st.session_state.login_attempts:
+                st.session_state.login_attempts[user_identifier] = 0
+            
+            # Agar maksimal urinishlar sonidan oshib ketgan bo'lsa, kirishni bloklaymiz
+            if st.session_state.login_attempts[user_identifier] >= MAX_LOGIN_ATTEMPTS:
+                st.error(f"Siz maksimal urinishlar sonini ({MAX_LOGIN_ATTEMPTS}) oshib ketdingiz. Kirish vaqtincha bloklangan.")
+                # "Himoyani tozalash" tugmasini ko'rsatamiz (faqat development muhitida)
+                if st.button("🔒 Himoyani tozalash"):
+                    st.session_state.login_attempts[user_identifier] = 0
+                    st.success("Himoya tozalandi. Endi qayta urinib ko'rishingiz mumkin.")
+                    st.rerun()
+                return
+            
             authenticator.login(location='main', clear_on_submit=True)
             if st.session_state['authentication_status']:
+                # Muvaffaqiyatli login bo'lganda urinishlar sonini qayta tiklaymiz
+                st.session_state.login_attempts[user_identifier] = 0
                 authenticator.logout("Chiqish")
                 st.success(f"Assalomu alaykum {st.session_state['name']}, o'zingizning barcha ma'lumotlaringizni kiriting")
                 # Sertifikat uchun forma
@@ -164,7 +190,13 @@ if selected == "Sertifikat olish":
                     st.warning("Ma'lumotlarni to'liq to'ldiring.")
                     
             elif st.session_state['authentication_status'] is False:
-                st.error('Login yoki parol noto\'g\'ri.')
+                # Login yoki parol noto'g'ri bo'lsa, urinishlar sonini oshiramiz
+                st.session_state.login_attempts[user_identifier] += 1
+                remaining_attempts = MAX_LOGIN_ATTEMPTS - st.session_state.login_attempts[user_identifier]
+                if remaining_attempts > 0:
+                    st.error(f'Login yoki parol noto\'g\'ri. Sizda {remaining_attempts} ta urinish qoldi.')
+                else:
+                    st.error(f"Siz maksimal urinishlar sonini ({MAX_LOGIN_ATTEMPTS}) oshib ketdingiz. Kirish vaqtincha bloklangan.")
                 
                 authenticator.experimental_guest_login('Login with Google', provider='google',oauth2=config['oauth2'])
             elif st.session_state['authentication_status'] is None:
@@ -353,8 +385,9 @@ elif selected == "Foydalanuvchilar":
     if check_role(['admin', 'editor']):
         tab_names.append("Azolar ma'lumotlarini tahrirlash")
     
-    # Qidiruv tabini barcha foydalanuvchilarga ko'rsatamiz
-    tab_names.append("Qidiruv")
+    # Qidiruv tabini faqat admin foydalanuvchilarga ko'rsatamiz
+    if check_role(['admin']):
+        tab_names.append("Qidiruv")
     
     # Tablarni yaratish
     tabs = st.tabs(tab_names)
@@ -362,7 +395,7 @@ elif selected == "Foydalanuvchilar":
     # Tab indekslarini aniqlash
     user_management_tab_index = 0 if check_role(['admin']) else -1
     azolar_edit_tab_index = 1 if check_role(['admin']) else 0
-    search_tab_index = len(tab_names) - 1
+    search_tab_index = len(tab_names) - 1 if check_role(['admin']) else -1
     
     # Foydalanuvchilarni yuklash
     with open('src/config.yaml', 'r', encoding='utf-8') as file:
@@ -517,46 +550,47 @@ elif selected == "Foydalanuvchilar":
                                 st.success(f"{fio} o'chirildi!")
                                 st.rerun()
     
-    # Qidiruv tabi (barcha foydalanuvchilarga)
-    with tabs[search_tab_index]:
-        # Foydalanuvchilarni qidirish
-        st.markdown("## 🔍 Foydalanuvchilarni qidirish")
-        
-        # Qidiruv maydoni
-        search_query = st.text_input("Qidiruv", placeholder="Foydalanuvchi nomi, ismi yoki emailni kiriting...")
-        
-        # Filtirlangan foydalanuvchilar
-        filtered_users = {}
-        if search_query:
-            for username, user_data in users.items():
-                # Qidiruv so'rovi foydalanuvchi nomi, ismi yoki emailda mavjud bo'lsa
-                if (search_query.lower() in username.lower() or 
-                    search_query.lower() in user_data.get('first_name', '').lower() or
-                    search_query.lower() in user_data.get('last_name', '').lower() or
-                    search_query.lower() in user_data.get('email', '').lower()):
-                    filtered_users[username] = user_data
-        else:
-            filtered_users = users
-        
-        # Foydalanuvchilar jadvali
-        if filtered_users:
-            st.markdown(f"### 📋 Topilgan foydalanuvchilar ({len(filtered_users)})")
+    # Qidiruv tabi (faqat admin uchun)
+    if check_role(['admin']) and search_tab_index >= 0:
+        with tabs[search_tab_index]:
+            # Foydalanuvchilarni qidirish
+            st.markdown("## 🔍 Foydalanuvchilarni qidirish")
             
-            # Foydalanuvchilar uchun DataFrame yaratish
-            user_data = []
-            for username, user_info in filtered_users.items():
-                user_data.append({
-                    "Foydalanuvchi nomi": username,
-                    "Ism": user_info.get('first_name', ''),
-                    "Familiya": user_info.get('last_name', ''),
-                    "Email": user_info.get('email', ''),
-                    "Ro'lar": ', '.join(user_info.get('roles', [])) if user_info.get('roles') else ''
-                })
+            # Qidiruv maydoni
+            search_query = st.text_input("Qidiruv", placeholder="Foydalanuvchi nomi, ismi yoki emailni kiriting...")
             
-            df = pd.DataFrame(user_data)
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.info("Hech qanday foydalanuvchi topilmadi.")
+            # Filtirlangan foydalanuvchilar
+            filtered_users = {}
+            if search_query:
+                for username, user_data in users.items():
+                    # Qidiruv so'rovi foydalanuvchi nomi, ismi yoki emailda mavjud bo'lsa
+                    if (search_query.lower() in username.lower() or 
+                        search_query.lower() in user_data.get('first_name', '').lower() or
+                        search_query.lower() in user_data.get('last_name', '').lower() or
+                        search_query.lower() in user_data.get('email', '').lower()):
+                        filtered_users[username] = user_data
+            else:
+                filtered_users = users
+            
+            # Foydalanuvchilar jadvali
+            if filtered_users:
+                st.markdown(f"### 📋 Topilgan foydalanuvchilar ({len(filtered_users)})")
+                
+                # Foydalanuvchilar uchun DataFrame yaratish
+                user_data = []
+                for username, user_info in filtered_users.items():
+                    user_data.append({
+                        "Foydalanuvchi nomi": username,
+                        "Ism": user_info.get('first_name', ''),
+                        "Familiya": user_info.get('last_name', ''),
+                        "Email": user_info.get('email', ''),
+                        "Ro'lar": ', '.join(user_info.get('roles', [])) if user_info.get('roles') else ''
+                    })
+                
+                df = pd.DataFrame(user_data)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("Hech qanday foydalanuvchi topilmadi.")
 
 elif selected == "Dasturchi haqida":
     st.write("*Dasturchi haqida*")
