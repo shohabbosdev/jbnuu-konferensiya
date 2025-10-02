@@ -12,6 +12,8 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                UpdateError)
 from utils import make_certificates, create_pdf_certificate
 from streamlit_option_menu import option_menu
+import plotly.express as px
+import pandas as pd
 
 # JSON faylni o'qib olish
 with open('src/azolar.json', 'r', encoding='utf-8') as f:
@@ -28,7 +30,9 @@ st.caption("Mirzo Ulugʻbek nomidagi Oʻzbekiston Milliy universitetining Jizzax
 
 # Yon panel
 with st.sidebar:
-    selected = option_menu("Bosh sahifa", ["Sertifikat olish", "Dasturchi haqida"], icons=['house', 'list-task'], menu_icon="cast", default_index=0)
+    selected = option_menu("Bosh sahifa", ["Sertifikat olish", 'Maqola talablari', "Statistika", "Dasturchi haqida"], icons=['house', 'gear', 'bar-chart', 'list-task'], menu_icon="cast", default_index=0)
+    st.write("Konferensiya materiali")
+    st.link_button("Anjuman xati", url="src/Xalqaro konferensiya_O'zMU JF_Axborot xati.pdf", use_container_width=True)
 
 if selected == "Sertifikat olish":
     # YAML konfiguratsiyani yuklash
@@ -89,7 +93,7 @@ if selected == "Sertifikat olish":
                     # PDF yuklab olish tugmasi
                     pdf_buffer = create_pdf_certificate(familiya, maqola_matni)
                     st.download_button(
-                        label="Sertifikat yuklab olish",
+                        label="🔽 Sertifikatni pdf fayl ko'rinishida yuklab olish",
                         data=pdf_buffer,
                         file_name=f"sertifikat_{familiya}.pdf",
                         mime="application/pdf",
@@ -170,6 +174,44 @@ if selected == "Sertifikat olish":
     # Asosiy qism
     if __name__ == "__main__":
         login()
+
+elif selected=="Maqola talablari":
+    st.write("*Axborot xati*")
+    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_1.jpg")
+    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_2.jpg")
+    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_3.jpg")
+    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_4.jpg")
+    st.link_button("1-2-3-shoʻbalarga telegram havola", url=" https://t.me/UzMU_JF_conf_1_2_3_shob", icon="1️⃣")
+    st.link_button("4-5-6-shoʻbalarga telegram havola", url=" https://t.me/Uzmu_JF_konf_4_5_6_shuba", icon="2️⃣")
+
+elif selected == "Statistika":
+    st.markdown("# 📊 Statistika")
+    
+    # Statistik ma'lumotlarni tayyorlash
+    stats_data = []
+    total_participants = 0
+    
+    for shuba, participants in data.items():
+        count = len(participants)
+        stats_data.append({"Shuba": shuba, "Ishtirokchilar soni": count})
+        total_participants += count
+    
+    st.markdown(f"**Jami ishtirokchilar soni:** {total_participants}")
+    
+    # DataFrame yaratish
+    df = pd.DataFrame(stats_data)
+    
+    # Bar chart chizish
+    fig = px.bar(df, x="Shuba", y="Ishtirokchilar soni", 
+                 title="Har bir shubada ishtirokchilar soni",
+                 color="Ishtirokchilar soni",
+                 color_continuous_scale="viridis")
+    fig.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Jadval ko'rinishida
+    st.markdown("### 📋 Batafsil statistika")
+    st.dataframe(df, use_container_width=True)
 
 elif selected == "Dasturchi haqida":
     st.write("*Dasturchi haqida*")
