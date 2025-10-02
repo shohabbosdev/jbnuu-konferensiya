@@ -31,8 +31,6 @@ st.caption("Mirzo Ulugʻbek nomidagi Oʻzbekiston Milliy universitetining Jizzax
 # Yon panel
 with st.sidebar:
     selected = option_menu("Bosh sahifa", ["Sertifikat olish", "Statistika", "Dasturchi haqida"], icons=['house', 'bar-chart', 'list-task'], menu_icon="cast", default_index=0)
-    st.write("Konferensiya materiali")
-    st.link_button("Anjuman xati", url="src/Xalqaro konferensiya_O'zMU JF_Axborot xati.pdf", use_container_width=True)
 
 if selected == "Sertifikat olish":
     # YAML konfiguratsiyani yuklash
