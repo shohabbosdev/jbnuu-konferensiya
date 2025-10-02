@@ -1,5 +1,8 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import base64
 
 path = r'src/Times New Roman Bold.ttf'
 # Global Variables
@@ -61,3 +64,22 @@ def make_certificates(name, second_text):
     image_bytes.seek(0)
     
     return image_bytes
+
+# PDF yaratish funksiyasi
+def create_pdf_certificate(name, second_text):
+    # Avval rasmni yaratamiz
+    image_bytes = make_certificates(name, second_text)
+    
+    # PDF yaratish
+    pdf_buffer = BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=(WIDTH, HEIGHT))
+    
+    # Rasmni PDF ga qo'shish
+    image_bytes.seek(0)
+    img_data = base64.b64encode(image_bytes.getvalue()).decode()
+    c.drawImage(f"data:image/png;base64,{img_data}", 0, 0, width=WIDTH, height=HEIGHT)
+    
+    c.save()
+    pdf_buffer.seek(0)
+    
+    return pdf_buffer

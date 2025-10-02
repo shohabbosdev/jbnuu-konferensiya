@@ -10,7 +10,7 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                RegisterError,
                                                ResetError,
                                                UpdateError)
-from utils import make_certificates
+from utils import make_certificates, create_pdf_certificate
 from streamlit_option_menu import option_menu
 
 # JSON faylni o'qib olish
@@ -28,9 +28,7 @@ st.caption("Mirzo Ulugʻbek nomidagi Oʻzbekiston Milliy universitetining Jizzax
 
 # Yon panel
 with st.sidebar:
-    selected = option_menu("Bosh sahifa", ["Sertifikat olish", 'Maqola talablari', "Dasturchi haqida"], icons=['house', 'gear', 'list-task'], menu_icon="cast", default_index=0)
-    st.write("Konferensiya materiali")
-    st.link_button("Anjuman xati", use_container_width=True, url="src/Xalqaro konferensiya_O'zMU JF_Axborot xati.pdf")
+    selected = option_menu("Bosh sahifa", ["Sertifikat olish", "Dasturchi haqida"], icons=['house', 'list-task'], menu_icon="cast", default_index=0)
 
 if selected == "Sertifikat olish":
     # YAML konfiguratsiyani yuklash
@@ -60,6 +58,10 @@ if selected == "Sertifikat olish":
                 # 1. Shuba tanlash
                 shuba = st.selectbox("Shubani tanlang:", list(data.keys()))
                 
+                # Initsializatsiya
+                familiya = None
+                maqola_matni = None
+                
                 # 2. Familiya tanlash (agar shuba tanlangan bo'lsa)
                 if shuba:
                     familiyalar = list(data[shuba].keys())  # tanlangan shubaga mos familiyalar
@@ -73,17 +75,33 @@ if selected == "Sertifikat olish":
                 
                 createButton = st.button("Sertifikat yaratish", use_container_width=True, type='primary', icon='✅')
                 
-                forgot_username()
+                # Global o'zgaruvchilar
+                if 'certificate_image' not in st.session_state:
+                    st.session_state.certificate_image = None
+                if 'shuba_name' not in st.session_state:
+                    st.session_state.shuba_name = None
+                
                 if createButton and familiya and maqola_matni:
-                    rasm = st.image(make_certificates(familiya, maqola_matni), caption=shuba)
-                else:
+                    st.session_state.certificate_image = make_certificates(familiya, maqola_matni)
+                    st.session_state.shuba_name = shuba
+                    st.image(st.session_state.certificate_image, caption=shuba)
+                    
+                    # PDF yuklab olish tugmasi
+                    pdf_buffer = create_pdf_certificate(familiya, maqola_matni)
+                    st.download_button(
+                        label="PDF sertifikatni yuklab olish",
+                        data=pdf_buffer,
+                        file_name=f"sertifikat_{familiya}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                elif createButton:
                     st.warning("Ma'lumotlarni to'liq to'ldiring.")
                     
             elif st.session_state['authentication_status'] is False:
                 st.error('Login yoki parol noto\'g\'ri.')
                 
                 authenticator.experimental_guest_login('Login with Google', provider='google',oauth2=config['oauth2'])
-                forgot_password()
             elif st.session_state['authentication_status'] is None:
                 
                 st.warning('Iltimos, foydalanuvchi nomi va parolingizni kiriting.')
@@ -96,7 +114,7 @@ if selected == "Sertifikat olish":
         register_button = st.button("Ro'yxatdan o'tish", type='primary', icon='🎁')
         if register_button:
             try:
-                email, username, name = authenticator.register_user(captcha=True, location='sidebar', roles='viewer')
+                email, username, name = authenticator.register_user(captcha=True, location='sidebar', roles=['viewer'])
                 if email:
                     st.success(f"Foydalanuvchi {username}, {name} bilan muvaffaqiyatli ro'yxatdan o'tdi.")
                     update_config_file()
@@ -134,24 +152,6 @@ if selected == "Sertifikat olish":
                 st.error(e)
         update_config_file()
 
-    # Foydalanuvchi nomini tiklash
-    def forgot_username():
-        forgetBtn = st.button("Foydalanuvchi nomini tiklash", type='primary', icon='🧑')
-        if forgetBtn:
-            # Creating a forgot username widget
-            try:
-                (username_of_forgotten_username,
-                email_of_forgotten_username) = authenticator.forgot_username()
-                if username_of_forgotten_username:
-                    st.success(f"Username **'{username_of_forgotten_username}'** to be sent to user securely")
-                    update_user_details()
-                    update_config_file()
-                    # Username to be transferred to the user securely
-                elif not username_of_forgotten_username:
-                    st.error('Email not found')
-            except ForgotError as e:
-                st.error(e)
-
     # Foydalanuvchi ma'lumotlarini yangilash
     def update_user_details():
             # Creating an update user details widget
@@ -170,15 +170,6 @@ if selected == "Sertifikat olish":
     # Asosiy qism
     if __name__ == "__main__":
         login()
-
-elif selected=="Maqola talablari":
-    st.write("*Axborot xati*")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_1.jpg")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_2.jpg")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_3.jpg")
-    st.image("src/settingJPG/Xalqaro konferensiya_O'zMU JF_Axborot xati (2)_4.jpg")
-    st.link_button("1-2-3-shoʻbalarga telegram havola", url=" https://t.me/UzMU_JF_conf_1_2_3_shob", icon="1️⃣")
-    st.link_button("4-5-6-shoʻbalarga telegram havola", url=" https://t.me/Uzmu_JF_konf_4_5_6_shuba", icon="2️⃣")
 
 elif selected == "Dasturchi haqida":
     st.write("*Dasturchi haqida*")

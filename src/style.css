@@ -1,16 +1,391 @@
+/* Zamonaviy interfeys uchun umumiy stillar */
+:root {
+  --primary-color: #5E17EB;
+  --secondary-color: #0E477D;
+  --background-color: #f8f9fa;
+  --card-background: #ffffff;
+  --text-color: #333333;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --transition: all 0.3s ease;
+}
 
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+}
+
+/* Sarlavhalar uchun stillar */
+h1, h2, h3 {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Kartochkalar uchun stillar */
+.card {
+  background: var(--card-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Tugmalar uchun stillar */
+.btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(94, 23, 235, 0.25);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon-only {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* Form elementlari uchun stillar */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e1e5eb;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: var(--transition);
+  background-color: var(--card-background);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.1);
+}
+
+/* Alertlar uchun stillar */
+.alert {
+  padding: 16px 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+/* Sidebar uchun stillar */
+.sidebar {
+  background: var(--card-background);
+  border-right: 1px solid #e1e5eb;
+  box-shadow: var(--box-shadow);
+  padding: 20px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu-item {
+  margin-bottom: 8px;
+}
+
+.sidebar-menu-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.sidebar-menu-link:hover {
+  background-color: rgba(94, 23, 235, 0.1);
+  color: var(--primary-color);
+}
+
+.sidebar-menu-link.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.sidebar-menu-icon {
+  margin-right: 12px;
+  font-size: 18px;
+}
+
+/* Asosiy kontent uchun stillar */
+.main-content {
+  padding: 24px;
+}
+
+/* Responsive dizayn */
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+  
+  .btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .form-control {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .main-content {
+    padding: 16px;
+  }
+}
+
+/* Avatar uchun stillar */
 .circle-container {
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    overflow: hidden;
-    background-color: #f2f2f2;
-    align-content: center;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f2f2f2;
+  align-content: center;
+  margin: 0 auto 20px;
+  border: 4px solid var(--primary-color);
+  box-shadow: var(--box-shadow);
 }
 
 .circle-container img {
-    width: 100%;
-    height: 100%;
-    /* object-fit: cover; */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
+/* Badge'lar uchun stillar */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.badge-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.badge-secondary {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+/* Link tugmalari uchun stillar */
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  background-color: var(--card-background);
+  color: var(--primary-color);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  transition: var(--transition);
+  border: 1px solid #e1e5eb;
+  gap: 8px;
+}
+
+.link-button:hover {
+  background-color: rgba(94, 23, 235, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Selectbox uchun stillar */
+select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e1e5eb;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  transition: var(--transition);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.1);
+}
+
+/* Input uchun stillar */
+input[type="text"] {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e1e5eb;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  transition: var(--transition);
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.1);
+}
+
+/* Button uchun stillar */
+button {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(94, 23, 235, 0.25);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Streamlit elementlari uchun maxsus stillar */
+.stButton > button {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.stButton > button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(94, 23, 235, 0.25);
+}
+
+.stButton > button:active {
+  transform: translateY(0);
+}
+
+.stSelectbox > div > div {
+  background-color: var(--card-background);
+  border: 1px solid #e1e5eb;
+  border-radius: var(--border-radius);
+}
+
+.stSelectbox > div > div:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.1);
+}
+
+.stTextInput > div > input {
+  background-color: var(--card-background);
+  border: 1px solid #e1e5eb;
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+}
+
+.stTextInput > div > input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.1);
+}
+
+/* PDF download button uchun stillar */
+.stDownloadButton > button {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.stDownloadButton > button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(94, 23, 235, 0.25);
+}
+
+.stDownloadButton > button:active {
+  transform: translateY(0);
+}
