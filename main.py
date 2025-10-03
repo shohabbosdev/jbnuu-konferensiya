@@ -141,6 +141,12 @@ if selected == "Sertifikat olish":
                 st.success(f"Assalomu alaykum {st.session_state['name']}, o'zingizning barcha ma'lumotlaringizni kiriting")
                 # Sertifikat uchun forma
                 # fish = st.text_input("Familiya ism, sharifingizni kiriting", placeholder="Ulug'murodov Shoh Abbos Baxodir o'g'li", max_chars=200)
+                # Qidiruv maydoni (faqat admin foydalanuvchilar uchun)
+                if check_role(['admin']):
+                    search_query = st.text_input("🔍 Qidiruv", placeholder="Familiya bo'yicha qidirish...")
+                else:
+                    search_query = ""
+                
                 # 1. Shuba tanlash
                 shuba = st.selectbox("Shubani tanlang:", list(data.keys()))
                 
@@ -158,6 +164,11 @@ if selected == "Sertifikat olish":
                 # 2. Familiya tanlash (agar shuba tanlangan bo'lsa)
                 if shuba:
                     familiyalar = list(data[shuba].keys())  # tanlangan shubaga mos familiyalar
+                    
+                    # Qidiruv natijalarini filtrlash
+                    if search_query and check_role(['admin']):
+                        familiyalar = [f for f in familiyalar if search_query.lower() in f.lower()]
+                    
                     familiya = st.selectbox("Familiyani tanlang:", familiyalar)
 
                     # 3. Mavzuni ko'rsatish (agar familiya tanlangan bo'lsa)
@@ -440,8 +451,11 @@ elif selected == "Foydalanuvchilar":
         with tabs[user_management_tab_index]:
             st.markdown("## 🛠️ Foydalanuvchi boshqarish")
             
-            # Yangi foydalanuvchi qo'shish
-            with st.expander("➕ Yangi foydalanuvchi qo'shish"):
+            # Foydalanuvchi boshqarish uchun tablarni yaratish
+            user_management_tabs = st.tabs(["Yangi foydalanuvchi qo'shish", "Foydalanuvchini tahrirlash"])
+            
+            # Yangi foydalanuvchi qo'shish tabi
+            with user_management_tabs[0]:
                 new_username = st.text_input("Foydalanuvchi nomi")
                 new_email = st.text_input("Email")
                 new_first_name = st.text_input("Ism")
@@ -471,49 +485,49 @@ elif selected == "Foydalanuvchilar":
                     else:
                         st.error("Barcha maydonlarni to'ldiring!")
             
-            # Foydalanuvchini tahrirlash
-            st.markdown("## ✏️ Foydalanuvchini tahrirlash")
-            edit_username = st.selectbox("Tahrirlash uchun foydalanuvchini tanlang", list(users.keys()))
-            
-            if edit_username:
-                user_data = users[edit_username]
-                edit_email = st.text_input("Email", value=user_data.get("email", ""))
-                edit_first_name = st.text_input("Ism", value=user_data.get("first_name", ""))
-                edit_last_name = st.text_input("Familiya", value=user_data.get("last_name", ""))
-                edit_roles = st.multiselect("Rollar", ["admin", "editor", "viewer"], 
-                                        default=user_data.get("roles", ["viewer"]), 
-                                        key=f"edit_user_roles_{edit_username}")
+            # Foydalanuvchini tahrirlash tabi
+            with user_management_tabs[1]:
+                edit_username = st.selectbox("Tahrirlash uchun foydalanuvchini tanlang", list(users.keys()))
                 
-                # Parolni o'zgartirish
-                change_password = st.checkbox("Parolni o'zgartirish")
-                new_password = ""
-                if change_password:
-                    new_password = st.text_input("Yangi parol", type="password", key=f"new_password_{edit_username}")
-                
-                if st.button("Foydalanuvchini yangilash"):
-                    # Foydalanuvchi ma'lumotlarini yangilash
-                    users[edit_username]["email"] = edit_email
-                    users[edit_username]["first_name"] = edit_first_name
-                    users[edit_username]["last_name"] = edit_last_name
-                    users[edit_username]["roles"] = edit_roles
+                if edit_username:
+                    user_data = users[edit_username]
+                    edit_email = st.text_input("Email", value=user_data.get("email", ""))
+                    edit_first_name = st.text_input("Ism", value=user_data.get("first_name", ""))
+                    edit_last_name = st.text_input("Familiya", value=user_data.get("last_name", ""))
+                    edit_roles = st.multiselect("Rollar", ["admin", "editor", "viewer"], 
+                                            default=user_data.get("roles", ["viewer"]), 
+                                            key=f"edit_user_roles_{edit_username}")
                     
-                    # Agar parol o'zgartirilmoqda bo'lsa
-                    if change_password and new_password:
-                        users[edit_username]["password"] = hash_password(new_password)
+                    # Parolni o'zgartirish
+                    change_password = st.checkbox("Parolni o'zgartirish")
+                    new_password = ""
+                    if change_password:
+                        new_password = st.text_input("Yangi parol", type="password", key=f"new_password_{edit_username}")
                     
-                    # Konfiguratsiya faylini yangilash
-                    update_config_file(config)
-                    st.success(f"{edit_username} foydalanuvchisi muvaffaqiyatli yangilandi!")
-                    st.rerun()
-                
-                # Foydalanuvchini o'chirish
-                if st.button("Foydalanuvchini o'chirish", type="primary"):
-                    if edit_username in users:
-                        del users[edit_username]
+                    if st.button("Foydalanuvchini yangilash"):
+                        # Foydalanuvchi ma'lumotlarini yangilash
+                        users[edit_username]["email"] = edit_email
+                        users[edit_username]["first_name"] = edit_first_name
+                        users[edit_username]["last_name"] = edit_last_name
+                        users[edit_username]["roles"] = edit_roles
+                        
+                        # Agar parol o'zgartirilmoqda bo'lsa
+                        if change_password and new_password:
+                            users[edit_username]["password"] = hash_password(new_password)
+                        
                         # Konfiguratsiya faylini yangilash
                         update_config_file(config)
-                        st.success(f"{edit_username} foydalanuvchisi muvaffaqiyatli o'chirildi!")
+                        st.success(f"{edit_username} foydalanuvchisi muvaffaqiyatli yangilandi!")
                         st.rerun()
+                    
+                    # Foydalanuvchini o'chirish
+                    if st.button("Foydalanuvchini o'chirish", type="primary"):
+                        if edit_username in users:
+                            del users[edit_username]
+                            # Konfiguratsiya faylini yangilash
+                            update_config_file(config)
+                            st.success(f"{edit_username} foydalanuvchisi muvaffaqiyatli o'chirildi!")
+                            st.rerun()
     
     # Azolar ma'lumotlarini tahrirlash tabi (admin va editor uchun)
     if check_role(['admin', 'editor']) and azolar_edit_tab_index >= 0:
@@ -523,6 +537,9 @@ elif selected == "Foydalanuvchilar":
             # Shubalarni ro'yxat qilish
             shubalar = list(data.keys())
             selected_shuba = st.selectbox("Shubani tanlang", shubalar)
+            
+            # Qidiruv maydoni
+            search_query = st.text_input("🔍 Qidiruv", placeholder="Familiya bo'yicha qidirish...", key="azolar_search")
             
             if selected_shuba:
                 # Tanlangan shubadagi ishtirokchilarni ko'rsatish
@@ -548,35 +565,57 @@ elif selected == "Foydalanuvchilar":
                 st.markdown("### Mavjud qatnashchilarni tahrirlash")
                 participants = data[selected_shuba]
                 
+                # Qidiruv natijalarini filtrlash
+                if search_query:
+                    filtered_participants = {k: v for k, v in participants.items() if search_query.lower() in k.lower()}
+                else:
+                    filtered_participants = participants
+                
+                # Alfavit tartibida saralash
+                sorted_participants = dict(sorted(filtered_participants.items()))
+                
+                # Pagination (sahifalash) uchun
+                page_size = 10  # Har bir sahifada 10 ta qatnashchi
+                page_number = st.number_input("Sahifa", min_value=1, max_value=(len(sorted_participants) // page_size) + 1, value=1)
+                
+                # Joriy sahifa uchun qatnashchilarni olish
+                start_idx = (page_number - 1) * page_size
+                end_idx = start_idx + page_size
+                paginated_participants = dict(list(sorted_participants.items())[start_idx:end_idx])
+                
                 # Har bir qatnashchi uchun tahrirlash imkoniyati
-                for fio, mavzu in participants.items():
-                    with st.expander(f"📝 {fio}"):
-                        edited_fio = st.text_input("Familiya Ism Sharif", value=fio, key=f"fio_{fio}")
-                        edited_mavzu = st.text_input("Mavzu", value=mavzu, key=f"mavzu_{fio}")
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            if st.button("Yangilash", key=f"update_{fio}"):
-                                # Agar FIO o'zgartirilgan bo'lsa, eski yozuvni o'chirib tashlaymiz
-                                if edited_fio != fio:
+                for idx, (fio, mavzu) in enumerate(paginated_participants.items(), start=start_idx + 1):
+                    col1, col2 = st.columns([1, 20])  # Tartib raqami uchun kichik ustun va expander uchun katta ustun
+                    with col1:
+                        st.markdown(f"**{idx}.**")
+                    with col2:
+                        with st.expander(f"📝 {fio}"):
+                            edited_fio = st.text_input("Familiya Ism Sharif", value=fio, key=f"fio_{fio}")
+                            edited_mavzu = st.text_input("Mavzu", value=mavzu, key=f"mavzu_{fio}")
+                            
+                            col3, col4 = st.columns(2)
+                            with col3:
+                                if st.button("Yangilash", key=f"update_{fio}"):
+                                    # Agar FIO o'zgartirilgan bo'lsa, eski yozuvni o'chirib tashlaymiz
+                                    if edited_fio != fio:
+                                        del data[selected_shuba][fio]
+                                    
+                                    # Yangi yoki o'zgartirilgan yozuvni qo'shamiz
+                                    data[selected_shuba][edited_fio] = edited_mavzu
+                                    
+                                    # JSON faylini yangilash
+                                    update_json_file(data)
+                                    st.success(f"{edited_fio} ma'lumotlari yangilandi!")
+                                    st.rerun()
+                            
+                            with col4:
+                                if st.button("O'chirish", key=f"delete_{fio}"):
+                                    # Qatnashchini o'chirish
                                     del data[selected_shuba][fio]
-                                
-                                # Yangi yoki o'zgartirilgan yozuvni qo'shamiz
-                                data[selected_shuba][edited_fio] = edited_mavzu
-                                
-                                # JSON faylini yangilash
-                                update_json_file(data)
-                                st.success(f"{edited_fio} ma'lumotlari yangilandi!")
-                                st.rerun()
-                        
-                        with col2:
-                            if st.button("O'chirish", key=f"delete_{fio}"):
-                                # Qatnashchini o'chirish
-                                del data[selected_shuba][fio]
-                                # JSON faylini yangilash
-                                update_json_file(data)
-                                st.success(f"{fio} o'chirildi!")
-                                st.rerun()
+                                    # JSON faylini yangilash
+                                    update_json_file(data)
+                                    st.success(f"{fio} o'chirildi!")
+                                    st.rerun()
     
     # Qidiruv tabi (faqat admin uchun)
     if check_role(['admin']) and search_tab_index >= 0:
